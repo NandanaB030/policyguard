@@ -1,0 +1,11 @@
+# Access Control and Identity Management Policy
+Last Reviewed: 2024-03-20
+Status: Active
+
+1. Identity Verification
+- All access to production systems must be authorized by the IT Director.
+- Role-based access control (RBAC) should be implemented for all departments.
+
+2. Credential Protection
+- Users must not share credentials or passwords.
+- Guest accounts must be disabled after 24 hours of inactivity.

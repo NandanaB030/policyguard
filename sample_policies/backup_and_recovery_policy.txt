@@ -1,0 +1,11 @@
+# Backup and Disaster Recovery Policy
+Last Reviewed: 2025-10-05
+Status: Active
+
+1. Backup Schedule
+- Full system backups must be performed weekly.
+- Incremental backups must be created daily.
+
+2. Disaster Recovery
+- Disaster recovery drills shall be conducted annually.
+- Backup data must be stored in a geographically isolated site.

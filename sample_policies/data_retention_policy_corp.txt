@@ -1,0 +1,12 @@
+# Corporate Data Retention Policy
+Last Reviewed: 2023-11-10
+Status: Active
+
+1. Scope
+This policy covers the retention periods for all corporate data stored on servers and systems.
+
+2. Retention Schedules
+- Corporate backup retention must be 7 years.
+- All user access logs must be retained for 1 year.
+- Email logs should be kept for 3 years.
+- System audit records must be retained for 90 days.

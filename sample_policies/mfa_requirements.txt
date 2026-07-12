@@ -1,0 +1,11 @@
+# Multi-Factor Authentication Standards
+Last Reviewed: 2026-01-20
+Status: Active
+
+1. Scope
+These rules apply to all external and administrative users.
+
+2. MFA Obligation
+- Multi-factor authentication (MFA) is required for all external remote access.
+- OTP codes shall be delivered via physical authenticator app.
+- MFA systems should support adaptive authentication policies.

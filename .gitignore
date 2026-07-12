@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+scratch/
+.ipynb_checkpoints/
+*.pdf

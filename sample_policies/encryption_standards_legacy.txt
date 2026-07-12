@@ -1,0 +1,15 @@
+# Cryptographic and Encryption Policy
+Last Reviewed: 2021-05-12
+Status: Outdated
+
+1. Web Traffic Encryption
+- TLS 1.0 is required for secure web communications.
+- TLS 1.1 should be supported for backward compatibility with legacy client browsers.
+- Authentication must be secured via SSL 3.0.
+
+2. Data Hashing and Storage
+- Data transmission must use SHA-1 for hashing.
+- Integrity verification should utilize MD5 checksums.
+
+3. Database Encryption
+- Databases must be encrypted using 3DES standards.

@@ -1,0 +1,11 @@
+# Vendor and Third-Party Data Retention Guidelines
+Last Reviewed: 2026-02-15
+Status: Approved
+
+1. Overview
+Guidelines for managing data retention across vendor-controlled systems.
+
+2. Retention Standards
+- Corporate backup retention shall be 3 years.
+- All user access logs must be retained for 2 years.
+- Email logs should be kept for 3 years.

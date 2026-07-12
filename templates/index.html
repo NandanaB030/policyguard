@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Conflict & Staleness Detector | Cyber Security Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Custom Cyber Styling -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-cyber-dark text-cyber-light">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark border-bottom border-cyber-cyan-muted bg-cyber-card-dark py-3">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand d-flex align-items-center" href="#" id="nav-brand-title">
+                <i class="bi bi-shield-lock-fill text-cyber-cyan fs-3 me-2 glow-cyan"></i>
+                <span class="fw-bold tracking-wide">SECURE<span class="text-cyber-cyan">POL</span></span>
+                <span class="ms-2 badge bg-cyber-cyan-muted text-cyber-cyan font-mono border border-cyber-cyan border-opacity-50">v1.0.0</span>
+            </a>
+            <div class="d-flex align-items-center ms-auto font-mono text-cyber-cyan-muted fs-7">
+                <i class="bi bi-cpu-fill me-1 pulse-animation"></i> SYSTEM BASELINE DATE: <span class="text-cyber-cyan ms-1 fw-bold">{{ current_date }}</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Container -->
+    <main class="container-fluid px-4 py-4">
+        
+        <!-- Header Introduction -->
+        <div class="row mb-4">
+            <div class="col-12 text-center text-md-start">
+                <h1 class="fw-extrabold tracking-tight display-5 mb-2">Policy Conflict & <span class="text-gradient-cyan">Staleness Detector</span></h1>
+                <p class="text-cyber-cyan-muted fs-5 mb-0">Rule-based compliance analyzer for cybersecurity governance documents.</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Side: Control Panel & File Upload -->
+            <div class="col-lg-4 col-12">
+                <div class="card bg-cyber-card-dark border-cyber-cyan shadow-cyan-hover h-100">
+                    <div class="card-header border-bottom border-cyber-cyan-muted bg-cyber-card-header d-flex align-items-center">
+                        <i class="bi bi-folder2-open text-cyber-cyan me-2 fs-5"></i>
+                        <h5 class="mb-0 fw-bold font-mono tracking-wider text-cyber-cyan">UPLOAD HUB</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-between p-4">
+                        
+                        <!-- Upload Instructions -->
+                        <div class="mb-3">
+                            <p class="text-cyber-cyan-muted small">Upload multiple corporate policy files (.txt or .md) to parse modal obligations, flag version discrepancies, detect duplicates, and extract obsolete terminology.</p>
+                        </div>
+
+                        <!-- Drag and Drop Dropzone -->
+                        <div id="drop-zone" class="cyber-drop-zone p-4 text-center rounded border-2 border-dashed border-cyber-cyan-muted mb-4 cursor-pointer">
+                            <i class="bi bi-cloud-arrow-up text-cyber-cyan display-4 mb-3 d-block"></i>
+                            <span class="d-block fw-semibold text-cyber-light mb-1">Drag & Drop files here</span>
+                            <span class="text-cyber-cyan-muted small d-block mb-3">or click to browse local files</span>
+                            <input type="file" id="policy-file-input" multiple accept=".txt,.md" class="d-none">
+                            <button class="btn btn-sm btn-outline-cyber-cyan font-mono" type="button" id="browse-btn">
+                                <i class="bi bi-search me-1"></i> BROWSE FILES
+                            </button>
+                        </div>
+
+                        <!-- Selected File List Queue -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="font-mono text-cyber-cyan mb-0">UPLOAD QUEUE:</h6>
+                                <span class="badge bg-cyber-cyan-muted text-cyber-cyan font-mono" id="file-count-badge">0 Files</span>
+                            </div>
+                            <div id="file-list-queue" class="file-list-scroll rounded bg-cyber-dark p-2 border border-cyber-dark-border" style="max-height: 150px; min-height: 80px; overflow-y: auto;">
+                                <div class="text-cyber-cyan-muted text-center py-4 small" id="queue-empty-text">No files queued for analysis</div>
+                            </div>
+                        </div>
+
+                        <!-- Actions Panel -->
+                        <div class="d-grid gap-2">
+                            <button id="analyze-btn" class="btn btn-cyber-cyan font-mono py-2.5 fw-bold d-flex align-items-center justify-content-center" disabled>
+                                <span id="analyze-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+                                <i class="bi bi-shield-check me-1 fs-5" id="analyze-icon"></i> RUN DETECTION ENGINE
+                            </button>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button id="load-samples-btn" class="btn btn-outline-cyber-green w-100 font-mono py-2 small">
+                                        <i class="bi bi-magic me-1"></i> LOAD SAMPLES
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <form action="{{ url_for('clear_data') }}" method="POST" class="w-100">
+                                        <button type="submit" id="clear-btn" class="btn btn-outline-cyber-red w-100 font-mono py-2 small" {% if not results %}disabled{% endif %}>
+                                            <i class="bi bi-trash3 me-1"></i> RESET SYSTEM
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Dashboard Metrics & Charts -->
+            <div class="col-lg-8 col-12">
+                {% if not results %}
+                <!-- Initial Clean State Empty Screen -->
+                <div class="card bg-cyber-card-dark border-cyber-cyan-muted h-100 d-flex align-items-center justify-content-center p-5 text-center min-vh-50">
+                    <div class="p-4 rounded-circle bg-cyber-cyan-muted bg-opacity-10 border border-cyber-cyan border-opacity-25 mb-4">
+                        <i class="bi bi-shield-slash-fill text-cyber-cyan display-2 glow-cyan"></i>
+                    </div>
+                    <h3 class="fw-bold text-cyber-light font-mono">NO ACTIVE ASSESSMENT DATA</h3>
+                    <p class="text-cyber-cyan-muted max-w-lg mx-auto">Upload policy files or click <strong>Load Samples</strong> below to initialize the compliance rules engine, check for obligations, review status, and resolve conflicts.</p>
+                    <div class="mt-2">
+                        <button class="btn btn-cyber-green font-mono px-4 py-2" id="load-samples-empty-btn">
+                            <i class="bi bi-magic me-1"></i> INITIALIZE SAMPLE SUITE
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <!-- Dashboard Statistics & Reports -->
+                <div class="row g-3 mb-4">
+                    <!-- Total Policies Card -->
+                    <div class="col-md-3 col-6">
+                        <div class="card bg-cyber-card-dark border-cyber-cyan p-3 card-metric">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-cyber-cyan-muted small font-mono">TOTAL POLICIES</div>
+                                    <h2 class="fw-bold font-mono text-cyber-light mt-1" id="metric-policies">{{ results.total_policies }}</h2>
+                                </div>
+                                <span class="bg-cyber-cyan-muted bg-opacity-10 p-2 rounded border border-cyber-cyan border-opacity-20 text-cyber-cyan">
+                                    <i class="bi bi-files fs-5"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Conflicts Detected Card -->
+                    <div class="col-md-3 col-6">
+                        {% set total_conflicts = results.direct_conflicts|length + results.retention_conflicts|length %}
+                        <div class="card bg-cyber-card-dark border-cyber-red p-3 card-metric">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-cyber-cyan-muted small font-mono">CONFLICTS</div>
+                                    <h2 class="fw-bold font-mono mt-1 {% if total_conflicts > 0 %}text-cyber-red glow-red-text{% else %}text-cyber-light{% endif %}" id="metric-conflicts">
+                                        {{ total_conflicts }}
+                                    </h2>
+                                </div>
+                                <span class="bg-cyber-red bg-opacity-10 p-2 rounded border border-cyber-red border-opacity-25 text-cyber-red">
+                                    <i class="bi bi-exclamation-triangle fs-5"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Redundancy Card -->
+                    <div class="col-md-3 col-6">
+                        <div class="card bg-cyber-card-dark border-cyber-cyan-muted p-3 card-metric">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-cyber-cyan-muted small font-mono">REDUNDANCIES</div>
+                                    <h2 class="fw-bold font-mono mt-1 {% if results.redundancies|length > 0 %}text-warning{% else %}text-cyber-light{% endif %}" id="metric-redundancy">
+                                        {{ results.redundancies|length }}
+                                    </h2>
+                                </div>
+                                <span class="bg-warning bg-opacity-10 p-2 rounded border border-warning border-opacity-20 text-warning">
+                                    <i class="bi bi-copy fs-5"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stale Policies Card -->
+                    <div class="col-md-3 col-6">
+                        <div class="card bg-cyber-card-dark border-cyber-yellow p-3 card-metric">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="text-cyber-cyan-muted small font-mono">STALE POLICIES</div>
+                                    <h2 class="fw-bold font-mono mt-1 {% if results.stale_count > 0 %}text-cyber-yellow glow-yellow-text{% else %}text-cyber-light{% endif %}" id="metric-stale">
+                                        {{ results.stale_count }}
+                                    </h2>
+                                </div>
+                                <span class="bg-cyber-yellow bg-opacity-10 p-2 rounded border border-cyber-yellow border-opacity-20 text-cyber-yellow">
+                                    <i class="bi bi-calendar-x fs-5"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Score and PDF Export Panel -->
+                <div class="card bg-cyber-card-dark border-cyber-cyan mb-4">
+                    <div class="card-body p-4 d-flex flex-column flex-md-row align-items-center justify-content-between">
+                        <div class="d-flex align-items-center mb-3 mb-md-0">
+                            <!-- Circular Score Gauge Badge representation -->
+                            <div class="score-badge d-flex flex-column justify-content-center align-items-center me-4 rounded-circle border-3 border border-cyber-cyan">
+                                <span class="score-value fw-extrabold display-6 text-cyber-cyan font-mono line-height-1">{{ results.health_score }}</span>
+                                <span class="score-lbl font-mono fs-8 mt-1 text-cyber-cyan-muted">HEALTH</span>
+                            </div>
+                            <div>
+                                <h4 class="fw-bold text-cyber-light mb-1">
+                                    Policy Alignment Grade: 
+                                    <span class="badge {{ results.badge_class }} ms-1 fs-6 font-mono px-3 py-1.5">{{ results.health_rating }}</span>
+                                </h4>
+                                <p class="text-cyber-cyan-muted small mb-0">Analysis baseline includes check of {{ results.obligations|length }} distinct obligation verbs, date records, and legacy tech checks.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('download_pdf') }}" class="btn btn-cyber-green font-mono py-2.5 px-4 fw-bold shadow-green-hover" id="download-pdf-btn">
+                                <i class="bi bi-file-earmark-pdf-fill me-1"></i> DOWNLOAD PDF REPORT
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Panels -->
+                <div class="row g-3">
+                    <!-- Pie Chart: Obligation Breakdown -->
+                    <div class="col-md-6 col-12">
+                        <div class="card bg-cyber-card-dark border-cyber-dark-border h-100">
+                            <div class="card-header border-bottom border-cyber-dark-border bg-cyber-card-header font-mono text-cyber-cyan">
+                                <i class="bi bi-pie-chart-fill me-2"></i>OBLIGATIONS BY CATEGORY
+                            </div>
+                            <div class="card-body p-3 d-flex align-items-center justify-content-center" style="min-height: 250px;">
+                                <canvas id="categoriesPieChart" style="max-height: 230px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bar Chart: Discovered Flaws breakdown -->
+                    <div class="col-md-6 col-12">
+                        <div class="card bg-cyber-card-dark border-cyber-dark-border h-100">
+                            <div class="card-header border-bottom border-cyber-dark-border bg-cyber-card-header font-mono text-cyber-cyan">
+                                <i class="bi bi-bar-chart-steps me-2"></i>DISCOVERED FLAWS BY TYPE
+                            </div>
+                            <div class="card-body p-3 d-flex align-items-center justify-content-center" style="min-height: 250px;">
+                                <canvas id="issuesBarChart" style="max-height: 230px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if results %}
+        <!-- Bottom Section: Detailed Analytical Grid -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-cyber-card-dark border-cyber-cyan shadow-cyan-hover">
+                    <div class="card-header border-bottom border-cyber-cyan-muted bg-cyber-card-header p-0">
+                        <ul class="nav nav-tabs border-0 font-mono tracking-wider text-uppercase" id="resultsTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active border-0 rounded-0 text-cyber-light px-4 py-3" id="conflicts-tab" data-bs-toggle="tab" data-bs-target="#conflicts" type="button" role="tab" aria-controls="conflicts" aria-selected="true">
+                                    <i class="bi bi-exclamation-triangle-fill text-cyber-red me-1"></i> Conflicts
+                                    <span class="badge bg-cyber-red text-white ms-1 rounded-pill">{{ results.direct_conflicts|length + results.retention_conflicts|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link border-0 rounded-0 text-cyber-light px-4 py-3" id="staleness-tab" data-bs-toggle="tab" data-bs-target="#staleness" type="button" role="tab" aria-controls="staleness" aria-selected="false">
+                                    <i class="bi bi-calendar-x-fill text-cyber-yellow me-1"></i> Staleness & Legacy
+                                    <span class="badge bg-cyber-yellow text-dark ms-1 rounded-pill">{{ results.stale_count + results.deprecated_count }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link border-0 rounded-0 text-cyber-light px-4 py-3" id="redundancies-tab" data-bs-toggle="tab" data-bs-target="#redundancies" type="button" role="tab" aria-controls="redundancies" aria-selected="false">
+                                    <i class="bi bi-copy text-warning me-1"></i> Redundancies
+                                    <span class="badge bg-warning text-dark ms-1 rounded-pill">{{ results.redundancies|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link border-0 rounded-0 text-cyber-light px-4 py-3" id="obligations-tab" data-bs-toggle="tab" data-bs-target="#obligations" type="button" role="tab" aria-controls="obligations" aria-selected="false">
+                                    <i class="bi bi-list-stars text-cyber-cyan me-1"></i> All Obligations
+                                    <span class="badge bg-cyber-cyan text-dark ms-1 rounded-pill">{{ results.obligations|length }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="tab-content" id="resultsTabContent">
+                            
+                            <!-- TAB 1: CONFLICTS -->
+                            <div class="tab-pane fade show active" id="conflicts" role="tabpanel" aria-labelledby="conflicts-tab">
+                                {% if (results.direct_conflicts|length == 0) and (results.retention_conflicts|length == 0) %}
+                                <div class="text-center py-5 text-cyber-cyan-muted">
+                                    <i class="bi bi-check-circle-fill text-cyber-green display-4 mb-3 d-block"></i>
+                                    <h5 class="fw-bold">No Policy Conflicts Found</h5>
+                                    <p class="small">The rule matching engine did not detect any direct modal oppositions or differing retention periods.</p>
+                                </div>
+                                {% else %}
+                                
+                                <!-- Direct Modal Conflicts Table -->
+                                {% if results.direct_conflicts|length > 0 %}
+                                <h5 class="fw-bold font-mono text-cyber-red mb-3 tracking-wider"><i class="bi bi-slash-circle me-1"></i> DIRECT MODAL CONFLICTS (MUST vs MUST NOT)</h5>
+                                <div class="table-responsive mb-4 border border-cyber-red-muted rounded">
+                                    <table class="table table-cyber-dark mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 15%">Category</th>
+                                                <th style="width: 42%">Statement 1 (Positive)</th>
+                                                <th style="width: 43%">Statement 2 (Negative)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in results.direct_conflicts %}
+                                            <tr>
+                                                <td><span class="badge bg-cyber-red-muted text-cyber-red font-mono px-2.5 py-1.5 fs-8">{{ c.category }}</span></td>
+                                                <td>
+                                                    <div class="mb-1 text-cyber-light font-medium">"{{ c.sentence1 }}"</div>
+                                                    <span class="text-cyber-cyan-muted font-mono fs-8"><i class="bi bi-file-earmark-code me-1"></i>{{ c.file1 }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="mb-1 text-cyber-light font-medium">"{{ c.sentence2 }}"</div>
+                                                    <span class="text-cyber-cyan-muted font-mono fs-8"><i class="bi bi-file-earmark-code me-1"></i>{{ c.file2 }}</span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+
+                                <!-- Retention Conflicts Table -->
+                                {% if results.retention_conflicts|length > 0 %}
+                                <h5 class="fw-bold font-mono text-cyber-yellow mb-3 tracking-wider"><i class="bi bi-clock-history me-1"></i> RETENTION PERIOD DIFFERENCES</h5>
+                                <div class="table-responsive border border-cyber-yellow-muted rounded">
+                                    <table class="table table-cyber-dark mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 15%">Subject</th>
+                                                <th style="width: 42%">Retention 1</th>
+                                                <th style="width: 43%">Retention 2</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for rc in results.retention_conflicts %}
+                                            <tr>
+                                                <td><span class="badge bg-cyber-yellow-muted text-cyber-yellow font-mono px-2.5 py-1.5 fs-8">{{ rc.subject.upper() }}</span></td>
+                                                <td>
+                                                    <div class="mb-1 text-cyber-light font-medium">"{{ rc.sentence1 }}"</div>
+                                                    <div class="d-flex justify-content-between font-mono fs-8 mt-1">
+                                                        <span class="text-cyber-cyan-muted"><i class="bi bi-file-earmark-code me-1"></i>{{ rc.file1 }}</span>
+                                                        <span class="text-cyber-yellow font-bold">Value: {{ rc.value1 }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="mb-1 text-cyber-light font-medium">"{{ rc.sentence2 }}"</div>
+                                                    <div class="d-flex justify-content-between font-mono fs-8 mt-1">
+                                                        <span class="text-cyber-cyan-muted"><i class="bi bi-file-earmark-code me-1"></i>{{ rc.file2 }}</span>
+                                                        <span class="text-cyber-yellow font-bold">Value: {{ rc.value2 }}</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+
+                                {% endif %}
+                            </div>
+
+                            <!-- TAB 2: STALENESS & DEPRECATIONS -->
+                            <div class="tab-pane fade" id="staleness" role="tabpanel" aria-labelledby="staleness-tab">
+                                <h5 class="fw-bold font-mono text-cyber-yellow mb-3 tracking-wider"><i class="bi bi-file-earmark-excel me-1"></i> POLICY FILE REVIEW STATS & DEPRECATION SCORES</h5>
+                                <div class="table-responsive border border-cyber-yellow-muted rounded mb-4">
+                                    <table class="table table-cyber-dark mb-0 align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 30%">File Name</th>
+                                                <th style="width: 15%">Last Reviewed</th>
+                                                <th style="width: 15%">Document Age</th>
+                                                <th style="width: 20%">Status</th>
+                                                <th style="width: 20%">Deprecated Terms Found</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for filename, meta in results.metadata.items() %}
+                                            <tr class="{% if meta.is_stale_overall %}row-warning-highlight{% endif %}">
+                                                <td class="fw-bold text-cyber-light">{{ filename }}</td>
+                                                <td class="font-mono">{{ meta.reviewed_date }}</td>
+                                                <td class="font-mono">
+                                                    {% if meta.age_months is not none %}
+                                                        {{ meta.age_months }} months
+                                                    {% else %}
+                                                        <span class="text-muted">N/A</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if meta.is_stale_by_date %}
+                                                        <span class="badge bg-cyber-red text-white"><i class="bi bi-calendar-x me-1"></i>Stale (> 18m)</span>
+                                                    {% elif meta.reviewed_date == 'Not Found' %}
+                                                        <span class="badge bg-secondary"><i class="bi bi-question-circle me-1"></i>No Date Found</span>
+                                                    {% else %}
+                                                        <span class="badge bg-cyber-green text-dark"><i class="bi bi-check-circle me-1"></i>Up to date</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if meta.deprecated_terms %}
+                                                        {% for term in meta.deprecated_terms %}
+                                                            <span class="badge bg-cyber-yellow text-dark font-mono me-1" title="Deprecated standard detected">{{ term }}</span>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <span class="text-cyber-cyan-muted fs-8 font-mono">None detected</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="bg-cyber-card-header border border-cyber-yellow-muted rounded p-3 text-cyber-yellow small">
+                                    <i class="bi bi-info-circle-fill me-1"></i>
+                                    <strong>STALENESS THRESHOLD:</strong> Policy documents with review dates older than 18 months or incorporating deprecated terms (e.g. <i>TLS 1.0</i>, <i>3DES</i>, <i>SHA-1</i>) are flagged as high risk. Review tasks must be prioritized.
+                                </div>
+                            </div>
+
+                            <!-- TAB 3: REDUNDANCIES -->
+                            <div class="tab-pane fade" id="redundancies" role="tabpanel" aria-labelledby="redundancies-tab">
+                                {% if results.redundancies|length == 0 %}
+                                <div class="text-center py-5 text-cyber-cyan-muted">
+                                    <i class="bi bi-check-circle-fill text-cyber-green display-4 mb-3 d-block"></i>
+                                    <h5 class="fw-bold">No Redundant Statements Detected</h5>
+                                    <p class="small">The matching algorithm did not locate duplicate or near-identical statements (similarity threshold: > 85%).</p>
+                                </div>
+                                {% else %}
+                                <h5 class="fw-bold font-mono text-warning mb-3 tracking-wider"><i class="bi bi-copy me-1"></i> DUPLICATE & REDUNDANT STATEMENTS</h5>
+                                <div class="table-responsive border border-warning-muted rounded">
+                                    <table class="table table-cyber-dark mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 15%">Type</th>
+                                                <th style="width: 42%">Statement 1 (Source File)</th>
+                                                <th style="width: 43%">Statement 2 (Source File)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for r in results.redundancies %}
+                                            <tr>
+                                                <td>
+                                                    <span class="badge {% if r.type == 'Duplicate' %}bg-warning text-dark{% else %}bg-secondary{% endif %} font-mono px-2.5 py-1.5 fs-8">
+                                                        {{ r.type.upper() }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="mb-1 text-cyber-light font-medium">"{{ r.sentence1 }}"</div>
+                                                    <span class="text-cyber-cyan-muted font-mono fs-8"><i class="bi bi-file-earmark-code me-1"></i>{{ r.file1 }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="mb-1 text-cyber-light font-medium">"{{ r.sentence2 }}"</div>
+                                                    <span class="text-cyber-cyan-muted font-mono fs-8"><i class="bi bi-file-earmark-code me-1"></i>{{ r.file2 }}</span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- TAB 4: ALL OBLIGATIONS -->
+                            <div class="tab-pane fade" id="obligations" role="tabpanel" aria-labelledby="obligations-tab">
+                                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                                    <h5 class="fw-bold font-mono text-cyber-cyan mb-3 mb-md-0 tracking-wider"><i class="bi bi-list-stars me-1"></i> REGISTERED POLICY OBLIGATIONS</h5>
+                                    <!-- Simple text search filter -->
+                                    <div class="col-md-4 col-12">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-cyber-dark border-cyber-cyan-muted text-cyber-cyan-muted"><i class="bi bi-filter"></i></span>
+                                            <input type="text" id="obligations-filter" class="form-control bg-cyber-dark border-cyber-cyan-muted text-cyber-light font-mono small" placeholder="Filter sentences...">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="table-responsive border border-cyber-cyan-muted rounded file-list-scroll" style="max-height: 500px; overflow-y: auto;">
+                                    <table class="table table-cyber-dark mb-0 align-middle" id="obligations-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 15%">Category</th>
+                                                <th style="width: 55%">Obligation Statement</th>
+                                                <th style="width: 10%">Type</th>
+                                                <th style="width: 20%">Source File</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for ob in results.obligations %}
+                                            <tr class="obligation-row" data-sentence="{{ ob.sentence.lower() }}">
+                                                <td><span class="badge bg-cyber-cyan-muted text-cyber-cyan font-mono px-2.5 py-1.5 fs-8">{{ ob.category }}</span></td>
+                                                <td class="text-cyber-light">"{{ ob.sentence }}"</td>
+                                                <td>
+                                                    {% if ob.is_positive %}
+                                                        <span class="text-cyber-green font-mono fs-8 fw-semibold"><i class="bi bi-plus-circle me-1"></i>Required</span>
+                                                    {% else %}
+                                                        <span class="text-cyber-red font-mono fs-8 fw-semibold"><i class="bi bi-dash-circle me-1"></i>Prohibited</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="font-mono text-cyber-cyan-muted fs-8">{{ ob.file }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-cyber-card-dark border-top border-cyber-dark-border mt-5 py-4">
+        <div class="container text-center">
+            <p class="text-cyber-cyan-muted font-mono fs-8 mb-0">© 2026 POLICY CONFLICT & STALENESS DETECTOR | HACKATHON BUILD</p>
+            <p class="text-muted font-mono fs-9 mt-1">NO AI, NO DATABASE. BUILT WITH FLASK, REPORTLAB, AND PURE RULE-BASED REGEX ENGINES.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Pass backend chart variables to JS scripts safely using tags -->
+    {% if results %}
+    <script>
+        window.categoryChartLabels = {{ results.category_distribution.keys() | list | tojson }};
+        window.categoryChartData = {{ results.category_distribution.values() | list | tojson }};
+        
+        window.flawsLabels = ["Direct Conflicts", "Retention Mismatches", "Redundant Sentences", "Stale Files", "Deprecated Terms"];
+        window.flawsData = [
+            {{ results.direct_conflicts | length }},
+            {{ results.retention_conflicts | length }},
+            {{ results.redundancies | length }},
+            {{ results.stale_count }},
+            {{ results.deprecated_count }}
+        ];
+    </script>
+    {% endif %}
+
+    <!-- Custom Frontend Interaction JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

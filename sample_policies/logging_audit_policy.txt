@@ -1,0 +1,8 @@
+# System Logging and Security Auditing Policy
+Last Reviewed: 2024-01-10
+Status: Active
+
+1. Event Logging
+- Security logs must be monitored daily by the SOC team.
+- All system login attempts must be logged to a central SIEM.
+- Audit logs should be protected from unauthorized modification.

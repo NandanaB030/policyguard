@@ -1,0 +1,11 @@
+# Network Infrastructure Security Policy
+Last Reviewed: 2025-01-01
+Status: Active
+
+1. Perimeter Defense
+- Firewalls must block all incoming traffic by default.
+- Perimeter firewalls should be audited quarterly.
+
+2. Remote Connectivity
+- All VPN access should use multi-factor authentication (MFA).
+- Network routers must be updated regularly.
